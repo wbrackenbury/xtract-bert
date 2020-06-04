@@ -1,5 +1,6 @@
 #Virtual environment is unnecessary
 venv/*
+__pycache__/*
 
 #Emacs buffers
 *~

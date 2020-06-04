@@ -9,7 +9,6 @@ from markdown import markdown
 from xlrd.sheet import ctype_text
 
 from nltk.tokenize import RegexpTokenizer
-from stop_words import get_stop_words
 from nltk.stem.snowball import SnowballStemmer
 from nltk import ne_chunk, pos_tag, word_tokenize
 from nltk.tree import Tree

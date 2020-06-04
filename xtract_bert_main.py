@@ -6,8 +6,8 @@ import numpy as np
 
 from official.nlp.bert import tokenization
 
-from .txt_xtract import process_text
-from .utils import grouper, get_ext
+from txt_xtract import process_text
+from utils import grouper, get_ext
 
 HUB_URL = "https://tfhub.dev/tensorflow/bert_en_cased_L-12_H-768_A-12/1"
 MAX_SEQ_LEN = 128
@@ -193,11 +193,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--path', help='Path to directory',
                         required=False, type=str)
-    parser.add_argument('--top_words', help='Number of words to return',
-                        default=10)
-
     args = parser.parse_args()
 
-
-    meta = extract_keyword(args.path, args.text_string, args.top_words)
-    print(meta)
+    bert_layer, bert_token = load_bert_tools()
+    rep_jsons = walk_paths(args.path, bert_layer, bert_token)
+    print(rep_jsons)
