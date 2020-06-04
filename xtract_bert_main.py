@@ -1,5 +1,7 @@
 import os
+import logging
 import argparse
+import pprint
 import tensorflow as tf
 import tensorflow_hub as hub
 import numpy as np
@@ -88,27 +90,15 @@ def bert_input(text, tokenizer, max_seq_length):
 
   return input_ids, input_mask, segment_ids
 
-def finalize_text_rep(all_wrappers):
-
-    max_seq_length = MAX_SEQ_LEN  # Your choice here.
-
-    bert_layer = get_bert_layer(HUB_URL, tf.constant(max_seq_length))
-    bert_token = get_bert_tokenizer(bert_layer)
-
-    for fwrap in all_wrappers:
-        if fwrap.usable_text:
-
-            mod_txt = fwrap.text
-            mod_txt = mod_txt.replace('\n', '.')
-            sentences = mod_txt.split('.')
-
-
 def get_bert_rep(text, bert_layer, bert_token):
+
     full_out = []
     input_ids, input_mask, segment_ids = [], [], []
 
     mod_txt = text.replace('\n', '.')
     sentences = mod_txt.split('.')
+
+    max_seq_length = MAX_SEQ_LEN  # Your choice here.
 
     for s in sentences:
         if len(s) >= max_seq_length:
@@ -172,9 +162,10 @@ def walk_paths(dir_path, bert_layer, bert_token):
 
     ret_blobs = []
     for root, dirs, fs in os.walk(dir_path):
-        path = os.path.relpath(root, basepath).split(os.sep)
-        for f in files:
-            rep = extract_from_path(f, bert_layer, bert_token)
+        for f in fs:
+            path = os.path.join(dir_path, f)
+            logging.info("Extracting from {}...".format(f))
+            rep = extract_from_path(path, bert_layer, bert_token)
             ret_blobs.append(rep)
 
     return ret_blobs
@@ -195,6 +186,9 @@ if __name__ == "__main__":
                         required=False, type=str)
     args = parser.parse_args()
 
+    logging.info("Parsed args, now loading BERT model...")
     bert_layer, bert_token = load_bert_tools()
+    logging.info("BERT model loaded. Beginning walk and extraction.")
+
     rep_jsons = walk_paths(args.path, bert_layer, bert_token)
-    print(rep_jsons)
+    pprint.pprint(rep_jsons)

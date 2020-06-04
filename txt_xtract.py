@@ -23,6 +23,8 @@ try:
 except ImportError:
     from xml.etree.ElementTree import XML
 
+ENCODING = 'utf-8'
+
 def process_text(file_bytes, ext):
 
     image = set(['jpg', 'jpeg', 'png', 'tiff', 'tif', 'gif', 'bmp'])
