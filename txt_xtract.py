@@ -1,3 +1,8 @@
+import zipfile
+import re
+import xlrd
+import csv
+
 from io import BytesIO, StringIO, TextIOWrapper
 from itertools import chain
 from PIL import Image
