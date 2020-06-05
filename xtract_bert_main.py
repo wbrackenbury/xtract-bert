@@ -6,7 +6,12 @@ import tensorflow as tf
 import tensorflow_hub as hub
 import numpy as np
 
+from gensim import corpora, models
+from gensim.models import KeyedVectors, Word2Vec, ldamodel
 from official.nlp.bert import tokenization
+from nltk.tokenize import RegexpTokenizer
+from stop_words import get_stop_words
+from nltk.stem.snowball import SnowballStemmer
 
 from txt_xtract import process_text
 from utils import grouper, get_ext
@@ -14,6 +19,46 @@ from utils import grouper, get_ext
 HUB_URL = "https://tfhub.dev/tensorflow/bert_en_cased_L-12_H-768_A-12/1"
 MAX_SEQ_LEN = 128
 MAX_GROUP_SIZE = 100
+WORD_VECTORS_TO_READ = 500000
+BERT_NAME = 'bert'
+#W2V_MODEL_PATH = "/word2vec-GoogleNews-vectors/GoogleNews-vectors-negative300.bin.gz"
+W2V_MODEL_PATH = "/google_news_vec.bin.gz"
+
+def tok_and_stem(doc):
+
+    tokenizer = RegexpTokenizer(r'\w+')
+    en_stop = get_stop_words('en')
+    snowball_stemmer = SnowballStemmer('english')
+
+    raw = doc.lower()
+    tokens = tokenizer.tokenize(raw)
+
+    stopped_tokens = [it for it in tokens if not it in en_stop]
+    stemmed_tokens = [snowball_stemmer.stem(it) for it in stopped_tokens]
+    return stemmed_tokens
+
+def doc_vec(model, doc):
+    """
+    Create a makeshift document vector by taking the means of all word vectors
+    """
+
+    tok_and_stemmed_doc = tok_and_stem(doc)
+    clean_doc = [word for word in tok_and_stemmed_doc if word in model.vocab]
+    if clean_doc:
+        return np.mean(model[clean_doc], axis = 0)
+    else:
+        example_vector = model.get_vector("garbage")
+        return np.zeros(example_vector.shape)
+
+def load_w2v_model():
+    """
+    Load the word2vec pretrained model from the data file
+    """
+    model = KeyedVectors.load_word2vec_format(W2V_MODEL_PATH, binary = True, \
+                                              limit = WORD_VECTORS_TO_READ)
+    model.init_sims(replace = True)
+
+    return model
 
 def get_bert_tokenizer(bert_layer):
 
@@ -122,15 +167,16 @@ def get_bert_rep(text, bert_layer, bert_token):
     else:
         return []
 
-def rep_base(path):
+def rep_base(path, model_choice):
     rep = {'path': path,
+           'model': model_choice,
            'error': False,
            'error_reason': '',
            'rep': []}
     return rep
 
-def get_rep_and_ext(path):
-    rep = rep_base(path)
+def get_rep_and_ext(path, model_choice):
+    rep = rep_base(path, model_choice)
     ext = get_ext(path)
     if ext is None:
         rep['error'] = True
@@ -140,9 +186,9 @@ def get_rep_and_ext(path):
     rep['ext'] = ext
     return rep
 
-def extract_from_path(path, bert_layer, bert_token):
+def extract_from_path(path, model_choice, model_items):
 
-    rep = get_rep_and_ext(path)
+    rep = get_rep_and_ext(path, model_choice)
     if rep['error']:
         return rep
     with open(path, 'rb') as of:
@@ -150,22 +196,26 @@ def extract_from_path(path, bert_layer, bert_token):
 
     try:
         txt = process_text(content, rep['ext'])
-        bert_rep = get_bert_rep(txt, bert_layer, bert_token)
-        rep['rep'] = bert_rep
+        if model_choice == BERT_NAME:
+            bert_layer, bert_token = model_items
+            text_rep = get_bert_rep(txt, bert_layer, bert_token)
+        else:
+            text_rep = doc_vec(model_items, txt)
+        rep['rep'] = text_rep
     except Exception as e:
         rep['error'] = True
         rep['error_reason'] = e
 
     return rep
 
-def walk_paths(dir_path, bert_layer, bert_token):
+def walk_paths(dir_path, model_choice, model_items):
 
     ret_blobs = []
     for root, dirs, fs in os.walk(dir_path):
         for f in fs:
             path = os.path.join(dir_path, f)
             logging.info("Extracting from {}...".format(f))
-            rep = extract_from_path(path, bert_layer, bert_token)
+            rep = extract_from_path(path, model_choice, model_items)
             ret_blobs.append(rep)
 
     return ret_blobs
@@ -179,16 +229,25 @@ def load_bert_tools():
 
     return bert_layer, bert_token
 
+def load_model(model_choice):
+    if model_choice == "bert":
+        return load_bert_tools()
+    else:
+        return load_w2v_model()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--path', help='Path to directory',
                         required=False, type=str)
+    parser.add_argument('--model', help='bert | w2v',
+                        required=True, type=str)
+
     args = parser.parse_args()
 
-    logging.info("Parsed args, now loading BERT model...")
-    bert_layer, bert_token = load_bert_tools()
-    logging.info("BERT model loaded. Beginning walk and extraction.")
+    logging.info("Parsed args, now loading {} model...".format(args.model))
+    model_items = load_model(args.model)
+    logging.info("{} model loaded. Beginning walk and extraction.".format(args.model))
 
-    rep_jsons = walk_paths(args.path, bert_layer, bert_token)
+    rep_jsons = walk_paths(args.path, args.model, model_items)
     pprint.pprint(rep_jsons)

@@ -76,6 +76,7 @@ sentencepiece==0.1.91
 six==1.15.0
 sklearn==0.0
 smart-open==2.0.0
+stop-words==2018.7.23
 tb-nightly==2.3.0a20200413
 tensorboard==2.1.0
 tensorboard-plugin-wit==1.6.0.post3
