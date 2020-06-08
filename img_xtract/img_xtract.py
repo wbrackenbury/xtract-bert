@@ -1,6 +1,11 @@
+import io
 import tensorflow as tf
 import numpy as np
 from PIL import Image
+import logging
+import argparse
+
+RESNET_SIZE = (224, 224)
 
 def imbytes_to_imformat(fb):
 
@@ -64,9 +69,12 @@ def conv_to_web_labels(labels):
 def get_im_model():
 
     resnet = tf.keras.applications.resnet50.ResNet50(weights='imagenet')
+
+    print(resnet.summary())
+
     out_layer = resnet.get_layer('avg_pool')
     identity = tf.keras.layers.Lambda(lambda x: x)(out_layer.output)
-    pred_layer = resnet.get_layer('predictions')(out_layer.output)
+    pred_layer = resnet.get_layer('probs')(out_layer.output)
 
     model = tf.keras.models.Model(inputs = resnet.input,
                                   outputs = [identity, pred_layer])
@@ -91,8 +99,19 @@ def finalize_im_rep(fname):
         im = imbytes_to_imformat(fb)
         im_rep, label_preds = model.predict(im)
         full_labels = conv_resnet_labels(label_preds)
-        return im_rep, full_labels
+        return im_rep[0], full_labels
 
     except Exception as e:
         logging.error(e)
         return None, None
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--path', help='Path to directory',
+                        required=True, type=str)
+    args = parser.parse_args()
+
+    rep, labels = finalize_im_rep(args.path)
+    print(rep, labels)
