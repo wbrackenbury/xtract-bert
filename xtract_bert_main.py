@@ -21,8 +21,8 @@ MAX_SEQ_LEN = 128
 MAX_GROUP_SIZE = 100
 WORD_VECTORS_TO_READ = 500000
 BERT_NAME = 'bert'
-#W2V_MODEL_PATH = "/word2vec-GoogleNews-vectors/GoogleNews-vectors-negative300.bin.gz"
 W2V_MODEL_PATH = "/google_news_vec.bin.gz"
+
 
 def tok_and_stem(doc):
 
@@ -37,6 +37,7 @@ def tok_and_stem(doc):
     stemmed_tokens = [snowball_stemmer.stem(it) for it in stopped_tokens]
     return stemmed_tokens
 
+
 def doc_vec(model, doc):
     """
     Create a makeshift document vector by taking the means of all word vectors
@@ -50,6 +51,7 @@ def doc_vec(model, doc):
         example_vector = model.get_vector("garbage")
         return np.zeros(example_vector.shape)
 
+
 def load_w2v_model():
     """
     Load the word2vec pretrained model from the data file
@@ -60,6 +62,7 @@ def load_w2v_model():
 
     return model
 
+
 def get_bert_tokenizer(bert_layer):
 
     vocab_file = bert_layer.resolved_object.vocab_file.asset_path.numpy()
@@ -67,6 +70,7 @@ def get_bert_tokenizer(bert_layer):
     tokenizer = tokenization.FullTokenizer(vocab_file, do_lower_case)
 
     return tokenizer
+
 
 def get_bert_layer(HUB_URL, max_seq_length):
 
@@ -81,6 +85,7 @@ def get_bert_layer(HUB_URL, max_seq_length):
     bert_layer = hub.KerasLayer(HUB_URL,
                                 trainable=False)
     return bert_layer
+
 
 def bert_input(text, tokenizer, max_seq_length):
 
@@ -135,6 +140,7 @@ def bert_input(text, tokenizer, max_seq_length):
 
   return input_ids, input_mask, segment_ids
 
+
 def get_bert_rep(text, bert_layer, bert_token):
 
     full_out = []
@@ -167,6 +173,7 @@ def get_bert_rep(text, bert_layer, bert_token):
     else:
         return []
 
+
 def rep_base(path, model_choice):
     rep = {'path': path,
            'model': model_choice,
@@ -174,6 +181,7 @@ def rep_base(path, model_choice):
            'error_reason': '',
            'rep': []}
     return rep
+
 
 def get_rep_and_ext(path, model_choice):
     rep = rep_base(path, model_choice)
@@ -185,6 +193,7 @@ def get_rep_and_ext(path, model_choice):
         return rep
     rep['ext'] = ext
     return rep
+
 
 def extract_from_path(path, model_choice, model_items):
 
@@ -208,17 +217,18 @@ def extract_from_path(path, model_choice, model_items):
 
     return rep
 
-def walk_paths(dir_path, model_choice, model_items):
+
+def extract_text_metadata(file_list, model_choice, model_items):
 
     ret_blobs = []
-    for root, dirs, fs in os.walk(dir_path):
-        for f in fs:
-            path = os.path.join(dir_path, f)
-            logging.info("Extracting from {}...".format(f))
-            rep = extract_from_path(path, model_choice, model_items)
-            ret_blobs.append(rep)
+    for file_path in file_list:
+        # path = os.path.join(dir_path, f)
+        # logging.info("Extracting from {}...".format(f))
+        rep = extract_from_path(file_path, model_choice, model_items)
+        ret_blobs.append(rep)
 
     return ret_blobs
+
 
 def load_bert_tools():
 
@@ -228,6 +238,7 @@ def load_bert_tools():
     bert_token = get_bert_tokenizer(bert_layer)
 
     return bert_layer, bert_token
+
 
 def load_model(model_choice):
     if model_choice == "bert":
