@@ -5,8 +5,16 @@ RUN wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=down
 #RUN git clone https://github.com/mmihaltz/word2vec-GoogleNews-vectors.git
 #RUN cd word2vec-GoogleNews-vectors && tar -xvf GoogleNews-vectors-negative300.bin.gz && cd
 
-COPY xtract_bert_main.py txt_xtract.py utils.py requirements.txt /
+COPY requirements.txt /
 
 RUN pip install -U nltk
 RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
+RUN pip install flask
+
+COPY xtract_bert_main.py app.py txt_xtract.py utils.py /
+COPY /example_items /app/example_items
+
+ENTRYPOINT [ "python" ]
+
+CMD [ "app.py" ]

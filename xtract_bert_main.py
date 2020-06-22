@@ -229,6 +229,7 @@ def load_bert_tools():
 
     return bert_layer, bert_token
 
+
 def load_model(model_choice):
     if model_choice == "bert":
         return load_bert_tools()
@@ -236,18 +237,18 @@ def load_model(model_choice):
         return load_w2v_model()
 
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--path', help='Path to directory',
-                        required=False, type=str)
-    parser.add_argument('--model', help='bert | w2v',
-                        required=True, type=str)
-
-    args = parser.parse_args()
-
-    logging.info("Parsed args, now loading {} model...".format(args.model))
-    model_items = load_model(args.model)
-    logging.info("{} model loaded. Beginning walk and extraction.".format(args.model))
-
-    rep_jsons = walk_paths(args.path, args.model, model_items)
-    pprint.pprint(rep_jsons)
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument('--path', help='Path to directory',
+#                         required=False, type=str)
+#     parser.add_argument('--model', help='bert | w2v',
+#                         required=True, type=str)
+#
+#     args = parser.parse_args()
+#
+#     logging.info("Parsed args, now loading {} model...".format(args.model))
+#     model_items = load_model(args.model)
+#     logging.info("{} model loaded. Beginning walk and extraction.".format(args.model))
+#
+#     rep_jsons = walk_paths(args.path, args.model, model_items)
+#     pprint.pprint(rep_jsons)
