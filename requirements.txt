@@ -80,7 +80,7 @@ stop-words==2018.7.23
 tb-nightly==2.3.0a20200413
 tensorboard==2.1.0
 tensorboard-plugin-wit==1.6.0.post3
-tensorflow==2.1.0
+tensorflow==2.1.2
 tensorflow-addons==0.9.1
 tensorflow-datasets==2.1.0
 tensorflow-estimator==2.1.0
